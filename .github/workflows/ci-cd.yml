@@ -165,13 +165,11 @@ jobs:
         env:
           DO_USER: ${{ secrets.DO_USER }}
           DO_HOST: ${{ secrets.DO_HOST }}
-          IMAGE_LC: ${{ needs.prepare.outputs.IMAGE_LC }}
-          SAFE_TAG: ${{ needs.prepare.outputs.SAFE_TAG }}
         run: |
-          ssh -o StrictHostKeyChecking=no "$DO_USER@$DO_HOST" << 'EOF'
+          ssh -o StrictHostKeyChecking=no "$DO_USER@$DO_HOST" << EOF
             set -e
-            cd /home/${DO_USER}/app
-           
+            mkdir -p /home/$DO_USER/app
+            cd /home/$DO_USER/app
             docker compose -f docker-compose.deploy.yml pull
             docker compose -f docker-compose.deploy.yml down --remove-orphans
             docker volume rm nomi-lang_main_build || true
