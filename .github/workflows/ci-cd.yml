@@ -33,17 +33,13 @@ jobs:
         shell: bash
         run: |
           IMAGE_LC="${IMAGE,,}"
-
           ref="${GITHUB_REF_NAME}"
           safe="$(printf '%s' "$ref" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g' | sed -E 's/^-+|-+$//g' | cut -c1-120)"
           safe="${safe:-build}"
-
           echo "image_lc=$IMAGE_LC" >> "$GITHUB_OUTPUT"
           echo "safe_tag=$safe"      >> "$GITHUB_OUTPUT"
-
           if [ "${GITHUB_REF}" = "refs/heads/main" ]; then echo "is_main=true" >> "$GITHUB_OUTPUT"; else echo "is_main=false" >> "$GITHUB_OUTPUT"; fi
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then echo "is_tag=true" >> "$GITHUB_OUTPUT"; else echo "is_tag=false" >> "$GITHUB_OUTPUT"; fi
-
   build_and_push:
     runs-on: ubuntu-latest
     needs: prepare
@@ -84,14 +80,12 @@ jobs:
           docker buildx imagetools create \
             -t "${{ needs.prepare.outputs.IMAGE_LC }}:latest" \
             "${{ needs.prepare.outputs.IMAGE_LC }}:${{ env.RUN_ID }}-${{ needs.prepare.outputs.SAFE_TAG }}"
-
       - name: Tag & Push SAFE_TAG (tags or main)
         if: needs.prepare.outputs.IS_MAIN == 'true' || needs.prepare.outputs.IS_TAG == 'true'
         run: |
           docker buildx imagetools create \
             -t "${{ needs.prepare.outputs.IMAGE_LC }}:${{ needs.prepare.outputs.SAFE_TAG }}" \
             "${{ needs.prepare.outputs.IMAGE_LC }}:${{ env.RUN_ID }}-${{ needs.prepare.outputs.SAFE_TAG }}"
-
   lint:
     runs-on: ubuntu-latest
     needs: [ prepare, build_and_push ]   # חשוב: צריך גם את prepare בשביל ה-outputs
@@ -124,8 +118,8 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [ prepare, build_and_push ]   # צריך את התוצרים מה-prepare, ואת התדמית מה-build
-    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && needs.build_and_push.result == 'success' }}
+    needs: [ prepare, build_and_push ]
+    if: ${{ always() && github.ref == 'refs/heads/main' && needs.build_and_push.result == 'success' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -149,10 +143,10 @@ jobs:
 
       - name: (Optional) GHCR login on droplet if private
         env:
-          DO_USER: ${{ secrets.DO_USER }}
-          DO_HOST: ${{ secrets.DO_HOST }}
+          DO_USER:    ${{ secrets.DO_USER }}
+          DO_HOST:    ${{ secrets.DO_HOST }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          GHCR_USER: ${{ secrets.GHCR_USER }}
+          GHCR_USER:  ${{ secrets.GHCR_USER }}
         run: |
           if [ -n "${GHCR_TOKEN}" ] && [ -n "${GHCR_USER}" ]; then
             ssh -o StrictHostKeyChecking=no "$DO_USER@$DO_HOST" \
@@ -160,7 +154,6 @@ jobs:
           else
             echo "GHCR creds not set; skipping login."
           fi
-
       - name: Remote deploy
         env:
           DO_USER: ${{ secrets.DO_USER }}
