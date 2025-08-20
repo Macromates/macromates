@@ -1,0 +1,68 @@
+x-postgres-environment: &postgres-environment
+  POSTGRES_DB: ${POSTGRES_DB}
+  POSTGRES_HOST: ${POSTGRES_HOST}
+  POSTGRES_PORT: ${POSTGRES_PORT}
+  POSTGRES_USER: ${POSTGRES_USER}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+x-django-environment: &django-environment
+  DJANGO_DEBUG: ${DJANGO_DEBUG}
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+
+x-mail-environment: &mail-environment
+  DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL}
+  EMAIL_USE_TLS: ${EMAIL_USE_TLS}
+  EMAIL_HOST: ${EMAIL_HOST}
+  EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+  EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+  EMAIL_PORT: ${EMAIL_PORT}
+
+x-ai-environment: &ai-environment
+  OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+
+services:
+  backend:
+
+    image: ghcr.io/macromates/macromates:latest
+    command: "sh /scripts/prod.sh"
+    environment:
+      <<:
+        - *django-environment
+        - *postgres-environment
+        - *mail-environment
+        - *ai-environment
+    volumes:
+      - static_files:/static-files
+      - media_files:/media-files
+      - frontend_build:/frontend/dist
+
+  postgres:
+    image: postgres:latest
+    environment:
+      <<:
+        - *postgres-environment
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - static_files:/static-files
+      - media_files:/media-files
+      - frontend_build:/frontend_build
+      - ./nginx:/etc/nginx/conf.d/
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+
+volumes:
+  postgres_data:
+  static_files:
+  media_files:
+  frontend_build:
+
+
+
+
