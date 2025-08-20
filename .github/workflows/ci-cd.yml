@@ -114,7 +114,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: [push_latest, push_tag, cleanup]
-    # נאמן ל-GitLab: deploy ידני ורק על main
+    # ידני בלבד ועל main (כמו GitLab)
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
@@ -125,22 +125,40 @@ jobs:
           ssh-private-key: ${{ secrets.DO_SSH_KEY }}
 
       - name: Prepare remote dir
-        run: ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} "mkdir -p /home/${{ secrets.DO_USER }}/app"
+        env:
+          DO_USER: ${{ secrets.DO_USER }}
+          DO_HOST: ${{ secrets.DO_HOST }}
+        run: ssh -o StrictHostKeyChecking=no "$DO_USER@$DO_HOST" "mkdir -p /home/$DO_USER/app"
 
       - name: Upload compose file
-        run: scp -o StrictHostKeyChecking=no docker-compose.deploy.yml ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }}:/home/${{ secrets.DO_USER }}/app/docker-compose.deploy.yml
+        env:
+          DO_USER: ${{ secrets.DO_USER }}
+          DO_HOST: ${{ secrets.DO_HOST }}
+        run: scp -o StrictHostKeyChecking=no docker-compose.deploy.yml "$DO_USER@$DO_HOST:/home/$DO_USER/app/docker-compose.deploy.yml"
 
+      # כניסה ל-GHCR על השרת רק אם הוגדרו קרדנצ'לים
       - name: (Optional) GHCR login on droplet if private
-        if: ${{ secrets.GHCR_TOKEN != '' && secrets.GHCR_USER != '' }}
+        env:
+          DO_USER:    ${{ secrets.DO_USER }}
+          DO_HOST:    ${{ secrets.DO_HOST }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GHCR_USER:  ${{ secrets.GHCR_USER }}
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} \
-            "echo '${{ secrets.GHCR_TOKEN }}' | docker login ghcr.io -u '${{ secrets.GHCR_USER }}' --password-stdin || true"
+          if [ -n "${GHCR_TOKEN}" ] && [ -n "${GHCR_USER}" ]; then
+            ssh -o StrictHostKeyChecking=no "$DO_USER@$DO_HOST" \
+              "echo '${GHCR_TOKEN}' | docker login ghcr.io -u '${GHCR_USER}' --password-stdin || true"
+          else
+            echo "GHCR creds not set; skipping login."
+          fi
 
       - name: Remote deploy
+        env:
+          DO_USER: ${{ secrets.DO_USER }}
+          DO_HOST: ${{ secrets.DO_HOST }}
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no "$DO_USER@$DO_HOST" << 'EOF'
             set -e
-            cd /home/${{ secrets.DO_USER }}/app
+            cd /home/${DO_USER}/app
             docker compose -f docker-compose.deploy.yml pull
             docker compose -f docker-compose.deploy.yml down --remove-orphans
             docker volume rm nomi-lang_main_build || true
