@@ -154,6 +154,31 @@ jobs:
           else
             echo "GHCR creds not set; skipping login."
           fi
+
+      - name: Write .env on droplet
+        env:
+          DO_USER: ${{ secrets.DO_USER }}
+          DO_HOST: ${{ secrets.DO_HOST }}
+        run: |
+          ssh -o StrictHostKeyChecking=no "$DO_USER@$DO_HOST" "cat > /home/$DO_USER/app/.env" <<'EOF'
+          POSTGRES_DB: ${POSTGRES_DB}
+          POSTGRES_HOST: ${POSTGRES_HOST}
+          POSTGRES_PORT: ${POSTGRES_PORT}
+          POSTGRES_USER: ${POSTGRES_USER}
+          POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+          DJANGO_DEBUG: ${DJANGO_DEBUG}
+          DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+          DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL}
+          EMAIL_USE_TLS: ${EMAIL_USE_TLS}
+          EMAIL_HOST: ${EMAIL_HOST}
+          EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+          EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+          EMAIL_PORT: ${EMAIL_PORT}
+          OPENAI_API_KEY: ${OPENAI_API_KEY}
+          EOF
+
+
+
       - name: Remote deploy
         env:
           DO_USER: ${{ secrets.DO_USER }}
