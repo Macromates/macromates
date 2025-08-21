@@ -20,7 +20,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "@0107k&$wsj_ag+2er0mgbi)^7r1wxs_*rpd3!ght*!ez=6^w&h") or "@0107k&$wsj_ag+2er0mgbi)^7r1wxs_*rpd3!ght*!ez=6^w&h"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "@0107k&$wsj_ag+2er0mgbi)^7r1wxs_*rpd3!ght*!ez=6^w&h")
 
 # # Determine environment
 # ENVIRONMENT = config("ENVIRONMENT", default="dev")
