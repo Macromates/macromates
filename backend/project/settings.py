@@ -20,7 +20,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "@0107k&$wsj_ag+2er0mgbi)^7r1wxs_*rpd3!ght*!ez=6^w&h")
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "-$n57f@!^a#*8+fe0=efti)ce19r42)z@iufdt#)-(hik&3+4&")
 
 # # Determine environment
 # ENVIRONMENT = config("ENVIRONMENT", default="dev")
@@ -57,8 +57,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
+    "https://138.68.108.166",
     "https://macromates.ch",
-    "https://138.68.108.166"
 ]
 
 # Setup support for proxy headers

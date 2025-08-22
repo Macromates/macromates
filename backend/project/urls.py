@@ -36,12 +36,12 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path("backend/api/admin/", admin.site.urls),
-    path("backend/api/users/", include("customUser.urls")),  # Custom user app URLs
-    path("backend/api/auth/", include("authentication.urls")),  # Authentication app URLs
-    path("backend/api/goals/", include("usergoal.urls")),  # User goal app URLs
-    path("backend/api/docs/", schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path("backend/api/food/", include("foodPhoto.urls", namespace="foodPhoto")),
+    path("backend/admin/", admin.site.urls),
+    path("backend/users/", include("customUser.urls")),  # Custom user app URLs
+    path("backend/auth/", include("authentication.urls")),  # Authentication app URLs
+    path("backend/goals/", include("usergoal.urls")),  # User goal app URLs
+    path("backend/docs/", schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path("backend/food/", include("foodPhoto.urls", namespace="foodPhoto")),
 ]
 
 if settings.DEBUG:

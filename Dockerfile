@@ -32,6 +32,3 @@ COPY ./backend /backend
 WORKDIR /backend
 
 
-
-
-

@@ -24,7 +24,7 @@ x-ai-environment: &ai-environment
 services:
   backend:
 
-    image: ghcr.io/macromates/macromates:latest
+    image: registry.gitlab.com/macromates-group/macromates:latest
     command: "sh /scripts/prod.sh"
     environment:
       <<:
@@ -62,7 +62,3 @@ volumes:
   static_files:
   media_files:
   frontend_build:
-
-
-
-

@@ -1,6 +1,6 @@
 services:
   backend:
-    image: macromates25:latest
+    image: macromates3:latest
     ports:
       - "8000:8000"
     command: "sh /scripts/dev.sh"

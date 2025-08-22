@@ -1,0 +1,84 @@
+stages:
+  - pull
+  - build
+  - lint
+  - push
+  - cleanup
+  - deploy
+
+before_script:
+  - docker login -u "gitlab-ci-token" -p "$CI_JOB_TOKEN" "$CI_REGISTRY"
+  - chmod -R u+w .
+  - find . -type d -name "__pycache__" -exec rm -rf {} +
+
+pull:
+  stage: pull
+  tags:
+    - macro
+  allow_failure: true
+  script:
+    - docker pull "$CI_REGISTRY_IMAGE:latest"
+
+build:
+  stage: build
+  tags:
+    - macro
+  script:
+    - SAFE_TAG="${CI_COMMIT_REF_NAME//\//-}"
+    - echo "SAFE_TAG=$SAFE_TAG" > .env
+    - docker build --tag="$CI_REGISTRY_IMAGE:$CI_PIPELINE_ID-$SAFE_TAG" --cache-from="$CI_REGISTRY_IMAGE:latest" .
+
+lint:
+  stage: lint
+  tags:
+    - macro
+  allow_failure: True
+  script:
+    - SAFE_TAG="${CI_COMMIT_REF_NAME//\//-}"
+    - echo "SAFE_TAG=$SAFE_TAG" > .env
+    - docker compose -p "$CI_PIPELINE_ID" -f docker-compose.ci.yml run backend flake8 .
+
+push latest:
+  stage: push
+  tags:
+    - macro
+  script:
+    - SAFE_TAG="${CI_COMMIT_REF_NAME//\//-}"
+    - docker tag "$CI_REGISTRY_IMAGE:$CI_PIPELINE_ID-$SAFE_TAG" "$CI_REGISTRY_IMAGE:latest"
+    - docker push "$CI_REGISTRY_IMAGE:latest"
+
+push master:
+  stage: push
+  tags:
+    - macro
+  only:
+    - master
+    - tags
+  script:
+    - SAFE_TAG="${CI_COMMIT_REF_NAME//\//-}"
+    - docker tag "$CI_REGISTRY_IMAGE:$CI_PIPELINE_ID-$SAFE_TAG" "$CI_REGISTRY_IMAGE:$SAFE_TAG"
+    - docker push "$CI_REGISTRY_IMAGE:$SAFE_TAG"
+
+cleanup:
+  stage: cleanup
+  tags:
+    - macro
+  when: always
+  script:
+    - SAFE_TAG="${CI_COMMIT_REF_NAME//\//-}"
+    - echo "SAFE_TAG=$SAFE_TAG" > .env
+    - docker rmi -f "$CI_REGISTRY_IMAGE:$CI_PIPELINE_ID-$SAFE_TAG"
+    - docker compose -p "$CI_PIPELINE_ID" -f docker-compose.ci.yml down --remove-orphans
+
+deploy:
+  stage: deploy
+  tags:
+    - macro
+  only:
+    - main
+  when: manual
+  script:
+    - docker compose -f docker-compose.deploy.yml pull
+    - docker compose -f docker-compose.deploy.yml down --remove-orphans
+    - docker macromates_frontend_build || true
+    - docker compose -f docker-compose.deploy.yml up -d
